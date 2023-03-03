@@ -1,0 +1,64 @@
+#include <atomic>
+
+template <class T>
+class shared_ptr {
+public:
+  // 构造函数：创建 shared_ptr 对象
+  explicit shared_ptr(T* ptr = nullptr)
+      : ptr_(ptr),
+        ref_count_(new std::atomic_int(1)) {}
+
+  // 拷贝构造函数：复制 shared_ptr 对象
+  shared_ptr(const shared_ptr<T>& sp)
+      : ptr_(sp.ptr_),
+        ref_count_(sp.ref_count_) {
+    ++(*ref_count_);
+  }
+
+  // 析构函数：销毁 shared_ptr 对象
+  ~shared_ptr() {
+    if (--(*ref_count_) == 0) {
+      delete ptr_;
+      delete ref_count_;
+    }
+  }
+
+  // 赋值运算符：将一个 shared_ptr 的值赋给另一个 shared_ptr
+  shared_ptr<T>& operator=(const shared_ptr<T>& sp) {
+    if (this != &sp) {
+      if (--(*ref_count_) == 0) {
+        delete ptr_;
+        delete ref_count_;
+      }
+
+      ptr_ = sp.ptr_;
+      ref_count_ = sp.ref_count_;
+      ++(*ref_count_);
+    }
+    return *this;
+  }
+
+  // 重载运算符：访问 shared_ptr 中所包含的对象
+  T& operator*() const {
+    return *ptr_;
+  }
+
+  // 重载运算符：访问 shared_ptr 中所包含的对象的成员
+  T* operator->() const {
+    return ptr_;
+  }
+
+  // 获取所包含对象的地址
+  T* get() const {
+    return ptr_;
+  }
+
+  // 获取共享该对象的 shared_ptr 数量
+  int use_count() const {
+    return *ref_count_;
+  }
+
+private:
+  T* ptr_;                // 指向实际对象的指针
+  std::atomic_int* ref_count_;  // 引用计数
+};
